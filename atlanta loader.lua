@@ -3996,24 +3996,31 @@ end)
 					Size = dim2(1, -2, 1, -2),
 					BorderColor3 = rgb(0, 0, 0),
 					BorderSizePixel = 0,
-					BackgroundColor3 = themes.preset.inline,
-				}) library:apply_theme(hex_inline, "inline", "BackgroundColor3")
-				local hex_input = library:create("TextBox", {
-					Parent = hex_inline,
-					Name = "hex_input",
-					Position = dim2(0, 1, 0, 1),
-					Size = dim2(1, -2, 1, -2),
-					BorderSizePixel = 0,
-					BackgroundTransparency = 1,
-					FontFace = library.font,
-					TextColor3 = themes.preset.text,
-					TextSize = 11,
-					Text = "#FFFFFF",
-					PlaceholderText = "#FFFFFF",
-					PlaceholderColor3 = themes.preset.text,
-					ClearTextOnFocus = false,
-					TextXAlignment = Enum.TextXAlignment.Center,
-				}) library:apply_theme(hex_input, "text", "TextColor3")
+                    BackgroundColor3 = themes.preset.low_contrast,
+                }) library:apply_theme(hex_inline, "low_contrast", "BackgroundColor3")
+                local hex_stroke = library:create("UIStroke", {
+                    Parent = hex_inline,
+                    Color = themes.preset.outline,
+                    LineJoinMode = Enum.LineJoinMode.Miter,
+                    Thickness = 1,
+                }) library:apply_theme(hex_stroke, "outline", "Color")
+
+                local hex_input = library:create("TextBox", {
+                    Parent = hex_inline,
+                    Name = "hex_input",
+                    Position = dim2(0, 1, 0, 1),
+                    Size = dim2(1, -2, 1, -2),
+                    BorderSizePixel = 0,
+                    BackgroundTransparency = 1,
+                    FontFace = library.font,
+                    TextColor3 = themes.preset.text,
+                    TextSize = 11,
+                    Text = "#FFFFFF",
+                    PlaceholderText = "#FFFFFF",
+                    PlaceholderColor3 = themes.preset.text,
+                    ClearTextOnFocus = false,
+                    TextXAlignment = Enum.TextXAlignment.Center,
+                }) library:apply_theme(hex_input, "text", "TextColor3")
 
 				local alpha = library:create("TextButton", {
 					Parent = main_holder_background,

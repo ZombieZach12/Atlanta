@@ -2456,12 +2456,13 @@ end)
 					TextColor3 = flag_color("esp_flag_innocent");
 					Text = "Innocent";
 					TextStrokeTransparency = 0;
-					AnchorPoint = vec2(0, 0);
-					Size = dim2(0, 80, 0, 14);
+					AnchorPoint = vec2(1, 0);
+					AutomaticSize = Enum.AutomaticSize.XY;
 					BackgroundTransparency = 1;
 					Position = dim2(1, -16, 0, 2);
 					BorderSizePixel = 0;
 					TextSize = 12;
+					TextXAlignment = Enum.TextXAlignment.Right;
 				});
 				--
 				objects[ "team_flag" ] = library:create( "TextLabel" , {
@@ -2470,12 +2471,13 @@ end)
 					TextColor3 = rgb(255, 200, 100);
 					Text = "Inmates";
 					TextStrokeTransparency = 0;
-					AnchorPoint = vec2(0, 0);
-					Size = dim2(0, 80, 0, 14);
+					AnchorPoint = vec2(1, 0);
+					AutomaticSize = Enum.AutomaticSize.XY;
 					BackgroundTransparency = 1;
 					Position = dim2(1, -16, 0, 20);
 					BorderSizePixel = 0;
 					TextSize = 12;
+					TextXAlignment = Enum.TextXAlignment.Right;
 				});
 				--
 
@@ -2530,12 +2532,12 @@ end)
 				local highC = flag_color("esp_health_high")
 				local midC = flag_color("esp_health_mid")
 				local color = mult > 0.5 and (midC:Lerp(highC, (mult - 0.5) * 2)) or (lowC:Lerp(midC, mult * 2))
-				objects[ "healthbar" ].Size = UDim2.new(1, -2, mult, -2)
-				objects[ "healthbar" ].Position = UDim2.new(0, 1, 1 - mult, 1)
+				objects[ "healthbar" ].Size = UDim2.new(1, 0, mult, 0)
+				objects[ "healthbar" ].Position = UDim2.new(0, 0, 1 - mult, 0)
 				objects[ "healthbar" ].BackgroundColor3 = color
 				if objects[ "health_text" ] and objects[ "health_text" ].Parent == objects[ "holder" ] then
 					objects[ "health_text" ].Text = tostring(math.floor(mult * 100))
-					objects[ "health_text" ].Position = dim2(0, -8 - barW - 2, 1 - mult, 0)
+					objects[ "health_text" ].Position = dim2(0, - (barW + 4), 1 - mult, 0)
 				end
 			end
 
@@ -2573,19 +2575,31 @@ end)
 				local lineH = math.max(12, textSize - 2) + 4
 				local flagPadRight = -16
 				local flagPadTop = 2
+				local distanceYOffset = 5
+				local weaponYOffset = distanceYOffset + (flag_bool("esp_distance") and lineH or 0)
+
+				objects["distance"].Position = dim2(0.5, 0, 1, distanceYOffset)
+				objects["weapon"].Position = dim2(0.5, 0, 1, weaponYOffset)
 
 				objects["healthbar_holder"].Visible = flag_bool("esp_healthbar")
 				safe_set_parent(objects["healthbar_holder"], flag_bool("esp_healthbar") and objects["holder"] or library.cache)
 				objects["healthbar_holder"].Size = dim2(0, barW, 1, 0)
+				objects["healthbar_holder"].Position = dim2(0, - (barW + 2), 0, 0)
 
 				objects["health_text"].Visible = flag_bool("esp_healthtext")
 				safe_set_parent(objects["health_text"], flag_bool("esp_healthtext") and objects["holder"] or library.cache)
 				objects["health_text"].TextColor3 = flag_color("esp_healthtext_color")
 				objects["health_text"].TextSize = math.max(8, textSize - 2)
-				objects["health_text"].Position = dim2(0, -8 - barW - 2, 0.5, 0)
+				objects["health_text"].Position = dim2(0, - (barW + 4), 0.5, 0)
 				if objects["health_text"].FontFace then objects["health_text"].FontFace = fontFace end
 
+				local flagLineH = math.max(12, textSize - 2) + 2
+				local flagY = 2
 				objects["flag"].Visible = flag_bool("esp_flags")
+				safe_set_parent(objects["flag"], flag_bool("esp_flags") and objects["holder"] or library.cache)
+				objects["flag"].Position = dim2(1, -16, 0, flagY)
+				flagY = flagY + flagLineH
+				objects["team_flag"].Position = dim2(1, -16, 0, flagY)
 				safe_set_parent(objects["flag"], flag_bool("esp_flags") and objects["holder"] or library.cache)
 				objects["flag"].TextColor3 = flag_color("esp_flag_innocent")
 				objects["flag"].TextSize = math.max(8, textSize - 2)

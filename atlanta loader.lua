@@ -2594,12 +2594,12 @@ end)
 				if objects["health_text"].FontFace then objects["health_text"].FontFace = fontFace end
 
 				local flagLineH = math.max(12, textSize - 2) + 2
-				local flagY = 2
+				local flagY = -5
 				objects["flag"].Visible = flag_bool("esp_flags")
 				safe_set_parent(objects["flag"], flag_bool("esp_flags") and objects["holder"] or library.cache)
-				objects["flag"].Position = dim2(1, -16, 0, flagY)
+				objects["flag"].Position = dim2(1, 5, 0, flagY)
 				flagY = flagY + flagLineH
-				objects["team_flag"].Position = dim2(1, -16, 0, flagY)
+				objects["team_flag"].Position = dim2(1, 5, 0, flagY)
 				safe_set_parent(objects["flag"], flag_bool("esp_flags") and objects["holder"] or library.cache)
 				objects["flag"].TextColor3 = flag_color("esp_flag_innocent")
 				objects["flag"].TextSize = math.max(8, textSize - 2)

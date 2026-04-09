@@ -643,7 +643,7 @@ local function get_config_name_from_path(file)
 			Enabled = true,
 			Parent = gethui(),
 			Name = "",
-			DisplayOrder = 500, 
+			DisplayOrder = 1000000, 
 		})
 
 		function library:tool_tip(options) 
@@ -723,7 +723,13 @@ local function get_config_name_from_path(file)
 
 				library:connection(uis.InputChanged, function(input)
 					if watermark_outline.Visible and input.UserInputType == Enum.UserInputType.MouseMovement then
-						watermark_outline.Position = dim_offset(input.Position.X + 10, input.Position.Y + 10)
+						local tooltip_height = watermark_outline.AbsoluteSize.Y + 20
+						local target_y = input.Position.Y - tooltip_height
+						if target_y > gui_offset then
+							watermark_outline.Position = dim_offset(input.Position.X + 10, target_y)
+						else
+							watermark_outline.Position = dim_offset(input.Position.X + 10, input.Position.Y + 10)
+						end
 					end
 				end)
 			end 

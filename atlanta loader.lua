@@ -1737,8 +1737,13 @@ task.spawn(function()
         local username = player.Name
         local userId = player.UserId
         
-        -- Update watermark text
-        watermark.change_text("Atlanta | FPS: " .. fps .. " | Ping: " .. ping .. "ms | " .. username .. " (" .. userId .. ")")
+-- Update watermark text
+        local base = flags["watermark_text"] or base_watermark_text or "Atlanta"
+        local parts = {base}
+        if flags["watermark_fps"] then table.insert(parts, "FPS: " .. fps) end
+        if flags["watermark_ping"] then table.insert(parts, "Ping: " .. ping .. "ms") end
+        if flags["watermark_user"] then table.insert(parts, username .. " (" .. userId .. ")") end
+        watermark.change_text(table.concat(parts, " | "))
     end 
 end)
 
@@ -1825,9 +1830,12 @@ section:toggle({name = "Disable Glow", flag = "Disable Glow", callback = library
 section:toggle({name = "Watermark", flag = "watermark", callback = function(bool)
 					watermark.set_visible(bool)
 				end})
-				section:textbox({name = "Watermark Text", flag = "watermark_text", default = "Atlanta", callback = function(text)
-					watermark.change_text(text)
+section:textbox({name = "Watermark Text", flag = "watermark_text", default = "Atlanta", callback = function(text)
+					base_watermark_text = text
 				end})
+				section:toggle({name = "Show FPS", flag = "watermark_fps", default = true})
+				section:toggle({name = "Show Ping", flag = "watermark_ping", default = true})
+				section:toggle({name = "Show User", flag = "watermark_user", default = true})
 				section:button_holder({})
 				section:button({name = "Copy JobId", callback = function()
 					setclipboard(game.JobId)

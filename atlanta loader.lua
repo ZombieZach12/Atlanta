@@ -100,8 +100,60 @@
 		instances = {}; 
 		drawings = {};
 
-		display_orders = 0; 
+		display_orders = 0;
+		ui_scale = 1.0,
+		single_tab_mode = false,
 	}
+	
+	function library:update_ui_scale(scale)
+		library.ui_scale = scale
+		local screen_scale = library.get_screen_scale()
+		
+		-- Scale all GUIs
+		for _, gui in ipairs(library.guis) do
+			if gui.main_holder then
+				local base_size = gui.main_holder:GetAttribute("base_size") or gui.main_holder.Size
+				if not gui.main_holder:GetAttribute("base_size") then
+					gui.main_holder:SetAttribute("base_size", base_size)
+				end
+				
+				local new_size = UDim2.new(
+					base_size.X.Scale * screen_scale * scale,
+					base_size.X.Offset * screen_scale * scale,
+					base_size.Y.Scale * screen_scale * scale,
+					base_size.Y.Offset * screen_scale * scale
+				)
+				
+				library:tween(gui.main_holder, {
+					Size = new_size,
+					Position = library.get_centered_position(new_size)
+				})
+			end
+		end
+		
+		-- Recenter dock and keybind list
+		if library.dock_outline then
+			local dock_size = library.dock_outline.Size
+			library.dock_outline.Position = library.get_centered_position(UDim2.new(0, 157 * screen_scale * scale, 0, 39 * screen_scale * scale))
+		end
+		
+		if library.keybind_list_frame then
+			library.keybind_list_frame.Position = library.get_centered_position(library.keybind_list_frame.Size)
+		end
+	end
+	
+	function library:toggle_single_tab(enabled)
+		library.single_tab_mode = enabled
+		
+		if library.current_tab and library.current_tab[2] then
+			-- Only show current tab's section_holder, hide others
+			for _, child in ipairs(library.section_holder:GetChildren()) do
+				if child:IsA("Frame") and child:FindFirstChild("UIListLayout") then -- section_holder
+					child.Visible = not enabled or child == library.current_tab[2]
+				end
+			end
+		end
+	end
 
 local flags = library.flags
 	flags["Disable Glow"] = false
@@ -284,6 +336,30 @@ local flags = library.flags
 	end
 
 	local config_holder 
+
+	-- Responsive utils for small screens
+	library.is_mobile = function()
+		return camera.ViewportSize.X < 800
+	end
+
+	library.get_screen_scale = function()
+		return math.clamp(camera.ViewportSize.X / 1920, 0.6, 1.2)
+	end
+
+	library.get_centered_position = function(size)
+		local vp = camera.ViewportSize
+		local screen_scale = library.get_screen_scale()
+		local ui_scale = library.ui_scale or 1.0
+		local scale_size = UDim2.new(
+			size.X.Scale * screen_scale * ui_scale,
+			size.X.Offset * screen_scale * ui_scale,
+			size.Y.Scale * screen_scale * ui_scale,
+			size.Y.Offset * screen_scale * ui_scale
+		)
+		local clamped_w = math.clamp(scale_size.X.Offset, library.is_mobile() and 250 or 300, vp.X * 0.9)
+		local clamped_h = math.clamp(scale_size.Y.Offset, library.is_mobile() and 350 or 400, vp.Y * 0.9)
+		return UDim2.new(0.5, -clamped_w/2, 0.5, -clamped_h/2)
+	end
 -- 
 -- library functions 
 	-- misc functions
@@ -346,6 +422,8 @@ local flags = library.flags
 			local start_size 
 			local start 
 			local og_size = frame.Size  
+			local min_w = library.is_mobile() and 250 or og_size.X.Offset
+			local min_h = library.is_mobile() and 350 or og_size.Y.Offset
 
 			Frame.InputBegan:Connect(function(input)
 				if input.UserInputType == Enum.UserInputType.MouseButton1 then
@@ -370,13 +448,13 @@ local flags = library.flags
 						start_size.X.Scale,
 						math.clamp(
 							start_size.X.Offset + (input.Position.X - start.X),
-							og_size.X.Offset,
+							min_w,
 							viewport_x
 						),
 						start_size.Y.Scale,
 						math.clamp(
 							start_size.Y.Offset + (input.Position.Y - start.Y),
-							og_size.Y.Offset,
+							min_h,
 							viewport_y
 						)
 					)
@@ -389,6 +467,8 @@ local flags = library.flags
 			local dragging = false 
 			local start_size = frame.Position
 			local start 
+			local min_w = library.is_mobile() and 250 or 0
+			local min_h = library.is_mobile() and 350 or 0
 
 			frame.InputBegan:Connect(function(input)
 				if input.UserInputType == Enum.UserInputType.MouseButton1 then
@@ -422,15 +502,15 @@ local flags = library.flags
 
 					local current_position = dim2(
 						0,
-						clamp(
+						math.clamp(
 							start_size.X.Offset + (input.Position.X - start.X),
-							0,
+							min_w,
 							viewport_x - frame.Size.X.Offset
 						),
 						0,
-						clamp(
+						math.clamp(
 							start_size.Y.Offset + (input.Position.Y - start.Y),
-							0,
+							min_h,
 							viewport_y - frame.Size.Y.Offset
 						)
 					)
@@ -760,17 +840,17 @@ local function get_config_name_from_path(file)
 						Name = "" 
 					})
 					
-					items.main_holder = library:create("Frame", {
-						Parent = items.sgui,
-						Name = "",
-						AnchorPoint = vec2(cfg.anchor_point.X, cfg.anchor_point.Y),
-						Position = cfg.position,
-						Active = true, 
-						BorderColor3 = rgb(0, 0, 0),
-						Size = cfg.size,
-						BorderSizePixel = 0,
-						BackgroundColor3 = themes.preset.outline
-					})
+		items.main_holder = library:create("Frame", {
+			Parent = items.sgui,
+			Name = "",
+			AnchorPoint = vec2(cfg.anchor_point.X, cfg.anchor_point.Y),
+			Position = cfg.position or library.get_centered_position(cfg.size or dim2(0, 530, 0, 590)),
+			Active = true, 
+			BorderColor3 = rgb(0, 0, 0),
+			Size = cfg.size or dim2(0, 530 * library.get_screen_scale(), 0, 590 * library.get_screen_scale()),
+			BorderSizePixel = 0,
+			BackgroundColor3 = themes.preset.outline
+		})
 					library:draggify(items.main_holder)
 					library:make_resizable(items.main_holder)
 
@@ -1624,7 +1704,7 @@ local function get_config_name_from_path(file)
 				local main_window = library:panel({
 					name = properties and properties.name or "Atlanta | ", 
 					size = dim2(0, 604, 0, 628),
-					position = dim2(0, (camera.ViewportSize.X / 2) - 302 - 96, 0, (camera.ViewportSize.Y / 2) - 421 - 12),
+					position = library.get_centered_position(dim2(0, 604, 0, 628)),
 					image = "rbxassetid://98823308062942",
 				})
 
@@ -1806,6 +1886,12 @@ section:toggle({name = "Disable Glow", flag = "Disable Glow", callback = library
 					end
 				end})
 				local section = column:section({name = "Other"})
+				section:slider({name = "UI Scale", flag = "ui_scale", min = 0.5, max = 1.5, default = 1.0, callback = function(v)
+					library:update_ui_scale(v)
+				end})
+				section:toggle({name = "Single Tab Mode", flag = "single_tab_mode", callback = function(bool)
+					library:toggle_single_tab(bool)
+				end})
 				section:label({name = "UI Bind"})
 				:keybind({callback = window.set_menu_visibility, key = Enum.KeyCode.Insert})
 				section:toggle({name = "Keybind List", flag = "keybind_list", callback = function(bool)
@@ -5351,7 +5437,7 @@ section:textbox({name = "Watermark Text", flag = "watermark_text", default = "At
 
 				option_instances = {}, 
 				current_instance = nil, 
-				flag = options.flag or "SET A FLAG U NIGGER", 
+				flag = options.flag or "set a flag", 
 
 			} 
 
@@ -5588,7 +5674,7 @@ section:textbox({name = "Watermark Text", flag = "watermark_text", default = "At
 			local cfg = {
 				placeholder = options.placeholder or options.placeholdertext or options.holder or options.holdertext or "type here...",
 				default = options.default,
-				flag = options.flag or "SET ME NIGGA",
+				flag = options.flag or "set a flag",
 				callback = options.callback or function() end,
 				visible = options.visible or true,
 			}

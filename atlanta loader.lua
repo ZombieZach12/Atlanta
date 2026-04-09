@@ -2157,7 +2157,16 @@ section:textbox({name = "Watermark Text", flag = "watermark_text", default = "At
 		function library:esp_preview(properties)
 			local cfg = {items = {}, rotation = 0; objects = {};}
 			local props = properties or {}
-			local get_settings = props.get_settings or library.esp_preview_get_settings
+local get_settings = props.get_settings or function()
+  local base_flags = library.flags
+  if props and props.external_esp_api then
+    local external = props.external_esp_api()
+    for k, v in pairs(external or {}) do
+      base_flags[k] = v
+    end
+  end
+  return base_flags
+end
 
 			local character = nil
 			if lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") then
@@ -2575,7 +2584,8 @@ section:textbox({name = "Watermark Text", flag = "watermark_text", default = "At
 				local st = get_settings and get_settings()
 				local smooth = (st and st.HealthSmooth) or 0.05
 				local barW = (st and st.HealthBarWidth) or 3
-				local target = 0.5 + 0.5 * math.sin(tick() * 2)
+local health_val = library.flags["esp_health_value"] or (0.5 + 0.5 * math.sin(tick() * 2))
+local target = math.clamp(health_val, 0, 1)
 				cfg._health_prev = (cfg._health_prev or target) + (target - (cfg._health_prev or target)) * math.min(smooth * 30, 1)
 				local mult = math.clamp(cfg._health_prev, 0, 1)
 				local lowC = flag_color("esp_health_low")
@@ -2596,7 +2606,13 @@ section:textbox({name = "Watermark Text", flag = "watermark_text", default = "At
 				pcall(function() inst.Parent = new_parent end)
 			end
 
-			function cfg.refresh_elements( )
+function cfg.refresh_elements( )
+  -- Destroy unused objects to prevent leaks
+  for obj_name, obj in pairs(cfg.objects) do
+    if not flag_bool("esp_" .. obj_name:gsub("_.*", "")) and obj.Parent then
+      obj.Parent = nil
+    end
+  end
 				local st = get_settings and get_settings()
 				local textSize = (st and st.TextSize) or 14
 				local barW = (st and st.HealthBarWidth) or 3
@@ -2706,11 +2722,44 @@ section:textbox({name = "Watermark Text", flag = "watermark_text", default = "At
 				end
 			end
 
+			-- Live refresh heartbeat
+cfg.heartbeat = library:connection(run.RenderStepped, function()
+				cfg.refresh_elements()
+				cfg.change_health()
+			end)
+
+function cfg:destroy()
+  if cfg.heartbeat then
+    cfg.heartbeat:Disconnect()
+  end
+  if character then
+    character:Destroy()
+  end
+end
+
+			-- Handle character respawn
+			local function update_model()
+				if character then character:Destroy() end
+				if lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") then
+					lp.Character.Archivable = true
+					character = lp.Character:Clone()
+					if character:FindFirstChild("Animate") then character.Animate:Destroy() end
+					if character.Parent then character.Parent = items.viewportframe end
+					items.camera.CameraSubject = character
+					if cfg.preview_highlight then
+						cfg.preview_highlight.Parent = character
+						cfg.preview_highlight.Adornee = character
+					end
+				end
+			end
+			lp.CharacterAdded:Connect(update_model)
+			if lp.CharacterRemoving then lp.CharacterRemoving:Connect(function() task.wait(0.1) update_model() end) end
+
 			task.spawn(function()
-				while true do 
+				while character and character.Parent do
 					task.wait()
 					cfg.change_health()
-				end 
+				end
 			end)
 
 			return setmetatable(cfg, library)

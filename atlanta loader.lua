@@ -250,7 +250,7 @@ local flags = library.flags
 	if not library.font then
 		pcall(function()
 			if type(writefile) == "function" and type(getcustomasset) == "function" then
-				writefile("ArialBold.ttf", game:HttpGet("https://raw.githubusercontent.com/hoxj/atlanta-ui-lib/main/ArialBold.ttf"))
+				writefile("ArialBold.ttf", game:HttpGet("https://raw.githubusercontent.com/ZombieZach12/atlanta-ui-lib/main/ArialBold.ttf"))
 				local arialBoldDescriptor = {
 					name = "ArialBold",
 					faces = {

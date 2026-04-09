@@ -103,7 +103,8 @@
 		display_orders = 0; 
 	}
 
-	local flags = library.flags
+local flags = library.flags
+	flags["Disable Glow"] = false
 	local config_flags = library.config_flags
 
 	local themes = {
@@ -562,17 +563,32 @@ local function get_config_name_from_path(file)
 		end
 
 		function library:update_theme(theme, color)
+			if theme == "glow" and flags["Disable Glow"] then
+				library:update_glows()
+				return
+			end
 			for _, property in next, themes.utility[theme] do 
-
 				for m, object in next, property do 
 					if object[_] == themes.preset[theme] or object.ClassName == "UIGradient" then
 						object[_] = color 
 					end
 				end 
 			end 
-
 			themes.preset[theme] = color 
 		end 
+
+		function library:update_glows()
+			local disabled = flags["Disable Glow"]
+			for _, gui in next, library.guis do
+				pcall(function()
+					for _, glow in gui:GetDescendants() do
+						if glow.ClassName == "ImageLabel" and glow.Image == "http://www.roblox.com/asset/?id=18245826428" then
+							library:tween(glow, {ImageTransparency = disabled and 1 or 0.8})
+						end
+					end
+				end)
+			end
+		end
 
 		function library:connection(signal, callback)
 			local connection = signal:Connect(callback)
@@ -889,23 +905,25 @@ local function get_config_name_from_path(file)
 						PaddingLeft = dim(0, 5)
 					})
 					
-					items.glow = library:create("ImageLabel", {
-						Parent = items.main_holder,
-						Name = "",
-						ImageColor3 = themes.preset.glow,
-						ScaleType = Enum.ScaleType.Slice,
-						BorderColor3 = rgb(0, 0, 0),
-						BackgroundColor3 = rgb(255, 255, 255),
-						Visible = true,
-						Image = "http://www.roblox.com/asset/?id=18245826428",
-						BackgroundTransparency = 1,
-						ImageTransparency = 0.8, 
-						Position = dim2(0, -20, 0, -20),
-						Size = dim2(1, 40, 1, 40),
-						ZIndex = 2,
-						BorderSizePixel = 0,
-						SliceCenter = rect(vec2(21, 21), vec2(79, 79))
-					}) library:apply_theme(items.glow, "glow", "ImageColor3") 
+					if not flags["Disable Glow"] then
+						items.glow = library:create("ImageLabel", {
+							Parent = items.main_holder,
+							Name = "",
+							ImageColor3 = themes.preset.glow,
+							ScaleType = Enum.ScaleType.Slice,
+							BorderColor3 = rgb(0, 0, 0),
+							BackgroundColor3 = rgb(255, 255, 255),
+							Visible = true,
+							Image = "http://www.roblox.com/asset/?id=18245826428",
+							BackgroundTransparency = 1,
+							ImageTransparency = 0.8, 
+							Position = dim2(0, -20, 0, -20),
+							Size = dim2(1, 40, 1, 40),
+							ZIndex = 2,
+							BorderSizePixel = 0,
+							SliceCenter = rect(vec2(21, 21), vec2(79, 79))
+						}) library:apply_theme(items.glow, "glow", "ImageColor3") 
+					end
 				-- 
 				
 				-- Button
@@ -1758,6 +1776,7 @@ end)
 				:colorpicker({name = "Glow", color = themes.preset.glow, callback = function(color, alpha)
 					library:update_theme("glow", color)
 				end, flag = "Glow"})
+				section:toggle({name = "Disable Glow", flag = "Disable Glow"})
 				section:slider({name = "Blur Size", flag = "Blur Size", min = 0, max = 56, default = 15, interval = 1, callback = function(int)
 					if window.opened then 
 						blur.Size = int

@@ -105,6 +105,18 @@
 
 local flags = library.flags
 	flags["Disable Glow"] = false
+		
+		-- Global glow flag watcher
+		spawn(function()
+			local old_val = flags["Disable Glow"]
+			while true do
+				task.wait()
+				if flags["Disable Glow"] ~= old_val then
+					old_val = flags["Disable Glow"]
+					library:update_glows()
+				end
+			end
+		end)
 	local config_flags = library.config_flags
 
 	local themes = {
@@ -1776,7 +1788,7 @@ end)
 				:colorpicker({name = "Glow", color = themes.preset.glow, callback = function(color, alpha)
 					library:update_theme("glow", color)
 				end, flag = "Glow"})
-				section:toggle({name = "Disable Glow", flag = "Disable Glow"})
+section:toggle({name = "Disable Glow", flag = "Disable Glow", callback = library.update_glows})
 				section:slider({name = "Blur Size", flag = "Blur Size", min = 0, max = 56, default = 15, interval = 1, callback = function(int)
 					if window.opened then 
 						blur.Size = int
@@ -1903,7 +1915,7 @@ end)
 					section:button({name = "Unload Config", callback = function()
 						library:load_config(library.old_config)
 					end})
-					section:button({name = "Unload Menu", callback = function()
+				section:button({name = "Unload Menu", callback = function()
 						library:load_config(library.old_config)
 
 						for _, gui in library.guis do 
@@ -1916,6 +1928,8 @@ end)
 
 						blur:Destroy()
 					end})
+					
+					library:update_glows() -- Init glow state
 			-- 
 					
 			-- esp preview

@@ -1,4 +1,4 @@
-local library, themes = loadstring(game:HttpGet("https://raw.githubusercontent.com/ZombieZach12/atlanta-ui-lib/refs/heads/main/atlanta%20loader.lua"))()
+local library, themes = loadstring(game:HttpGet("https://raw.githubusercontent.com/ZombieZach12/atlanta/refs/heads/main/atlanta%20loader.lua"))()
 local dim2 = UDim2.new
 local hex = Color3.fromHex 
 

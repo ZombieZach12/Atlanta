@@ -9,6 +9,8 @@ A UI library for Roblox scripts.
 ### Added
 
 * Option to disable glow
+* Fixed the tooltip rendering below buttons
+* Settings to config the watermark
 
 ---
 

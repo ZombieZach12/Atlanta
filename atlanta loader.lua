@@ -385,6 +385,18 @@ local flags = library.flags
 			end)
 		end
 
+		function library:detect_rig(model)
+			if not model or not model.Parent then return "Unknown" end
+			local humanoid = model:FindFirstChildOfClass("Humanoid")
+			if humanoid and humanoid.RigType then
+				return humanoid.RigType == Enum.HumanoidRigType.R6 and "R6" or "R15"
+			end
+			-- Fallback: check part names
+			if model:FindFirstChild("Torso") then return "R6" end
+			if model:FindFirstChild("UpperTorso") then return "R15" end
+			return "Custom"
+		end
+
 		function library:draggify(frame)
 			local dragging = false 
 			local start_size = frame.Position

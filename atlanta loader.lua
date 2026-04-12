@@ -119,19 +119,21 @@ local flags = library.flags
 		end)
 	local config_flags = library.config_flags
 
-	local themes = {
-		preset = {
-			["outline"] = hex("#0A0A0A"), -- 
-			["inline"] = hex("#2D2D2D"), --
-			["accent"] = hex("#b4b4ff"), --
-			["high_contrast"] = hex("#141414"),
-			["low_contrast"] = hex("#1E1E1E"),
-			["text"] = hex("#B4B4B4"),
-			["text_outline"] = rgb(0, 0, 0),
-			["glow"] = hex("#b4b4ff"), 
-		},
+	local default_preset = {
+		["outline"] = hex("#0A0A0A"), -- 
+		["inline"] = hex("#2D2D2D"), --
+		["accent"] = hex("#b4b4ff"), --
+		["high_contrast"] = hex("#141414"),
+		["low_contrast"] = hex("#1E1E1E"),
+		["text"] = hex("#B4B4B4"),
+		["text_outline"] = rgb(0, 0, 0),
+		["glow"] = hex("#b4b4ff"), 
+	}
 
-		presets = {Default = preset}, -- Fallback preset. Remote themes loaded dynamically from GitHub
+	local themes = {
+		preset = default_preset,
+
+		presets = {Default = default_preset}, -- Fallback preset. Remote themes loaded dynamically from GitHub
 
 		utility = {
 			["outline"] = {
@@ -600,6 +602,48 @@ local function get_config_name_from_path(file)
 				end 
 			end 
 			themes.preset[theme] = color 
+		end 
+
+		function library:apply_preset(preset_name)
+			local preset = themes.presets[preset_name]
+			if not preset then return false end
+			for theme, color in next, preset do
+				library:update_theme(theme, color)
+			end
+			if library.theme_dropdown and library.theme_dropdown.refresh_options and library.theme_dropdown.set_value then
+				pcall(function() library.theme_dropdown:set_value(preset_name) end)
+			end
+			return true
+		end
+
+		function library:refresh_themes()
+			local remote_content = game:HttpGet("https://raw.githubusercontent.com/ZombieZach12/Atlanta/refs/heads/main/Themes/Themes.lua")
+			local success, remote_module = pcall(loadstring, remote_content)
+			if success and remote_module and type(remote_module.presets) == "table" then
+				themes.presets = {Default = default_preset}
+				for name, preset in next, remote_module.presets do
+					themes.presets[name] = preset
+				end
+				local preset_names = {}
+				for name in next, themes.presets do
+					insert(preset_names, name)
+				end
+				table.sort(preset_names)
+				for _, name in ipairs(preset_names) do
+					print(name .. " - Loaded")
+				end
+				if library.theme_dropdown and library.theme_dropdown.refresh_options then
+					library.theme_dropdown:refresh_options(preset_names)
+				end
+				if themes.preload and themes.presets[themes.preload] then
+					library:apply_preset(themes.preload)
+				end
+				print("Themes loaded from GitHub successfully! (" .. #preset_names .. " presets)")
+				return true
+			else
+				warn("Failed to load remote themes (loadstring failed), using fallback Default preset")
+				return false
+			end
 		end 
 
 		function library:update_glows()
@@ -1771,24 +1815,37 @@ end)
 				local column = setmetatable(items, library):column() 
 				local section = column:section({name = "Theme"})
 		local preset_names = {}
-	for name, _ in next, themes.presets do
+	if properties and properties.theme then
+		themes.preload = properties.theme
+	end
+	for name in next, themes.presets do
 		insert(preset_names, name)
 	end
 	table.sort(preset_names)
+	local default_theme = "Default"
+	if themes.preload and themes.presets[themes.preload] then
+		default_theme = themes.preload
+	end
 	local theme_dropdown = section:dropdown({
 		name = "Theme Preset",
 		items = preset_names,
-		default = "Default",
-			flag = "theme_preset",
-			callback = function(value)
-				local preset = themes.presets[value]
-				if preset then
-					for theme, color in next, preset do
-						library:update_theme(theme, color)
-					end
+		default = default_theme,
+		flag = "theme_preset",
+		callback = function(value)
+			local preset = themes.presets[value]
+			if preset then
+				for theme, color in next, preset do
+					library:update_theme(theme, color)
 				end
 			end
-		})
+		end
+	})
+	library.theme_dropdown = theme_dropdown
+	if themes.preload and themes.presets[themes.preload] then
+		task.spawn(function()
+			library:apply_preset(themes.preload)
+		end)
+	end
 				section:label({name = "Accent"})
 				:colorpicker({name = "Accent", color = themes.preset.accent, flag = "accent", callback = function(color, alpha)
 					library:update_theme("accent", color)
@@ -1994,9 +2051,12 @@ section:textbox({name = "Watermark Text", flag = "watermark_text", default = "At
 						pcall(function()
 							local remote_content = game:HttpGet("https://raw.githubusercontent.com/ZombieZach12/Atlanta/refs/heads/main/Themes/Themes.lua")
 local success, remote_module = pcall(loadstring, remote_content)
-if success and remote_module and remote_module.presets then
-themes.presets = remote_module.presets
-								local theme_flag = theme_dropdown
+if success and remote_module and type(remote_module.presets) == "table" then
+						themes.presets = {Default = default_preset}
+						for name, preset in next, remote_module.presets do
+							themes.presets[name] = preset
+						end
+								local theme_flag = theme_dropdown or library.theme_dropdown
 								if theme_flag and theme_flag.refresh_options then
 									local preset_names = {}
 									for name, _ in pairs(themes.presets) do
@@ -2004,6 +2064,12 @@ themes.presets = remote_module.presets
 									end
 									table.sort(preset_names)
 									theme_flag.refresh_options(preset_names)
+							if themes.preload and themes.presets[themes.preload] then
+								library:apply_preset(themes.preload)
+							end
+									for _, name in ipairs(preset_names) do
+										print(name .. " - Loaded")
+									end
 									print("Themes loaded from GitHub successfully! (" .. #preset_names .. " presets)")
 								end
 							else
@@ -2011,16 +2077,20 @@ themes.presets = remote_module.presets
 							end
 						end)
 					end)
-			-- 
-					
-			-- esp preview
-				local holder = library:panel({
+				spawn(function()
+					while task.wait(30) do
+						pcall(function()
+							library:refresh_themes()
+						end)
+					end
+				end)
+					local ESPPreview = SomeLibrary:Create({
 					name = "ESP Preview", 
 					anchor_point = vec2(0, 0),
 					size = dim2(0, 300, 0, 325),
 					position = dim2(0, style.items.main_holder.AbsolutePosition.X, 0, style.items.main_holder.AbsolutePosition.Y + style.items.main_holder.AbsoluteSize.Y + 2),
 					image = "rbxassetid://77684377836328",
-				})  
+				})
 				
 				local items = holder.items
 				

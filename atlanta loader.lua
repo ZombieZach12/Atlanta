@@ -617,8 +617,14 @@ local function get_config_name_from_path(file)
 		end
 
 		function library:refresh_themes()
-			local remote_content = game:HttpGet("https://raw.githubusercontent.com/ZombieZach12/Atlanta/refs/heads/main/Themes/Themes.lua")
-			local success, remote_module = pcall(loadstring, remote_content)
+			local remote_content = game:HttpGet("https://raw.githubusercontent.com/ZombieZach12/Atlanta/main/Themes/Themes.lua")
+			local chunk, parse_error = loadstring(remote_content)
+			if not chunk then
+				warn("Failed to parse remote themes (loadstring error): " .. tostring(parse_error) .. ", using fallback Default preset")
+				return false
+			end
+
+			local success, remote_module = pcall(chunk)
 			if success and remote_module and type(remote_module.presets) == "table" then
 				themes.presets = {Default = default_preset}
 				for name, preset in next, remote_module.presets do
@@ -629,14 +635,14 @@ local function get_config_name_from_path(file)
 					insert(preset_names, name)
 				end
 				table.sort(preset_names)
-				for _, name in ipairs(preset_names) do
-					print(name .. " - Loaded")
-				end
 				if library.theme_dropdown and library.theme_dropdown.refresh_options then
 					library.theme_dropdown:refresh_options(preset_names)
 				end
 				if themes.preload and themes.presets[themes.preload] then
 					library:apply_preset(themes.preload)
+				end
+				for _, name in ipairs(preset_names) do
+					print(name .. " - Loaded")
 				end
 				print("Themes loaded from GitHub successfully! (" .. #preset_names .. " presets)")
 				return true
@@ -2053,21 +2059,26 @@ section:textbox({name = "Watermark Text", flag = "watermark_text", default = "At
 					-- Load remote themes
 					spawn(function()
 						pcall(function()
-							local remote_content = game:HttpGet("https://raw.githubusercontent.com/ZombieZach12/Atlanta/refs/heads/main/Themes/Themes.lua")
-local success, remote_module = pcall(loadstring, remote_content)
-if success and remote_module and type(remote_module.presets) == "table" then
+							local remote_content = game:HttpGet("https://raw.githubusercontent.com/ZombieZach12/Atlanta/main/Themes/Themes.lua")
+								local chunk, parse_error = loadstring(remote_content)
+								local success, remote_module = false, nil
+								if chunk then
+									success, remote_module = pcall(chunk)
+								end
+								if success and remote_module and type(remote_module.presets) == "table" then
 						themes.presets = {Default = default_preset}
 						for name, preset in next, remote_module.presets do
 							themes.presets[name] = preset
 						end
 								local theme_flag = theme_dropdown or library.theme_dropdown
+								local preset_names = {}
 								if theme_flag and theme_flag.refresh_options then
-									local preset_names = {}
 									for name, _ in pairs(themes.presets) do
 										table.insert(preset_names, name)
 									end
 									table.sort(preset_names)
 									theme_flag.refresh_options(preset_names)
+								end
 							if themes.preload and themes.presets[themes.preload] then
 								library:apply_preset(themes.preload)
 							end
@@ -2101,7 +2112,7 @@ if success and remote_module and type(remote_module.presets) == "table" then
 				
 				local column = setmetatable(items, library):column() 
 				window.esp_section = column:section({name = "Main"})
-				
+
 				local holder = library:panel({
 					name = "Playerlist", 
 					anchor_point = vec2(0, 0),

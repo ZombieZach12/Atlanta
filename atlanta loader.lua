@@ -131,7 +131,7 @@ local flags = library.flags
 			["glow"] = hex("#b4b4ff"), 
 		},
 
-		presets = {}, -- Loaded dynamically from remote
+		presets = {Default = preset}, -- Fallback preset. Remote themes loaded dynamically from GitHub
 
 		utility = {
 			["outline"] = {
@@ -1988,23 +1988,21 @@ section:textbox({name = "Watermark Text", flag = "watermark_text", default = "At
 					spawn(function()
 						pcall(function()
 							local remote_content = game:HttpGet("https://raw.githubusercontent.com/ZombieZach12/Atlanta/refs/heads/main/Themes/Themes.lua")
-							local remote_themes = http_service:JSONDecode(remote_content)
-							if remote_themes and remote_themes.presets then
-								themes.presets = remote_themes.presets
-								local theme_dropdown_flag = "theme_preset"
-								if config_holder and config_holder.refresh_options then
+							local success, remote_module = pcall(loadstring, remote_content)
+							if success and remote_module and remote_module.presets then
+								themes.presets = remote_module.presets
+								local theme_flag = flags["theme_preset"]
+								if theme_flag and theme_flag.refresh_options then
 									local preset_names = {}
-									for name, _ in next, themes.presets do
+									for name, _ in pairs(themes.presets) do
 										table.insert(preset_names, name)
 									end
-									config_holder.refresh_options(preset_names)
+									table.sort(preset_names)
+									theme_flag.refresh_options(preset_names)
+									print("Themes loaded from GitHub successfully! (" .. #preset_names .. " presets)")
 								end
-								print("Themes loaded from GitHub successfully!")
 							else
-								warn("Failed to load remote themes, using fallback")
-								themes.presets = {
-									Default = themes.preset
-								}
+								warn("Failed to load remote themes (loadstring failed), using fallback Default preset")
 							end
 						end)
 					end)

@@ -1770,10 +1770,15 @@ end)
 
 				local column = setmetatable(items, library):column() 
 				local section = column:section({name = "Theme"})
-		section:dropdown({
-			name = "Theme Preset",
-			items = {},
-			default = "Default",
+		local preset_names = {}
+	for name, _ in next, themes.presets do
+		insert(preset_names, name)
+	end
+	table.sort(preset_names)
+	local theme_dropdown = section:dropdown({
+		name = "Theme Preset",
+		items = preset_names,
+		default = "Default",
 			flag = "theme_preset",
 			callback = function(value)
 				local preset = themes.presets[value]
@@ -1991,7 +1996,7 @@ section:textbox({name = "Watermark Text", flag = "watermark_text", default = "At
 							local success, remote_module = pcall(loadstring, remote_content)
 							if success and remote_module and remote_module.presets then
 								themes.presets = remote_module.presets
-								local theme_flag = flags["theme_preset"]
+								local theme_flag = theme_dropdown
 								if theme_flag and theme_flag.refresh_options then
 									local preset_names = {}
 									for name, _ in pairs(themes.presets) do

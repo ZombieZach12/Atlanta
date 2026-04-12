@@ -678,27 +678,31 @@ local function get_config_name_from_path(file)
 		end
 
 		function library:create(instance, options)
-			local ins = Instance.new(instance) 
+			if not instance or type(instance) ~= "string" then return nil end
+			local success, ins = pcall(Instance.new, instance)
+			if not success or not ins then return nil end
 			
 			for prop, value in next, options do 
-				ins[prop] = value
+				pcall(function() ins[prop] = value end)
 			end
 			
-			if instance == "TextLabel" or instance == "TextButton" or instance == "TextBox" then 	
-				library:apply_theme(ins, "text", "TextColor3")
-				library:apply_stroke(ins)
-			elseif instance == "ScreenGui" then 
-				insert(library.guis, ins)
-			end
+			pcall(function()
+				if instance == "TextLabel" or instance == "TextButton" or instance == "TextBox" then 	
+					library:apply_theme(ins, "text", "TextColor3")
+					library:apply_stroke(ins)
+				elseif instance == "ScreenGui" then 
+					insert(library.guis, ins)
+				end
+			end)
 			
 			return ins 
 		end
 	-- 
 
 	-- elements 
-		local tooltip_sgui = library:create("ScreenGui", {
+		tooltip_sgui = library:create("ScreenGui", {
 			Enabled = true,
-			Parent = gethui(),
+			Parent = (gethui and gethui()) or game:GetService("CoreGui"),
 			Name = "",
 			DisplayOrder = 1000000, 
 		})
@@ -1082,7 +1086,7 @@ local function get_config_name_from_path(file)
 
 		local sgui = library:create("ScreenGui", {
 			Enabled = true,
-			Parent = gethui(),
+			Parent = (gethui and gethui()) or game:GetService("CoreGui"),
 			Name = "",
 			DisplayOrder = 999999, 
 		})

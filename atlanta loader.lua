@@ -105,9 +105,11 @@
 
 local flags = library.flags
 				flags["Disable Glow"] = false
-				flags.ThemePreset = "Modern"
+				
+				local config_flags = library.config_flags
 				
 				config_flags.ThemePreset = function(preset)
+				    flags.ThemePreset = preset
 				    local preset_colors = themes.presets[preset]
 				    if preset_colors then
 				        for theme_key, color in pairs(preset_colors) do
@@ -127,7 +129,6 @@ local flags = library.flags
 				end
 			end
 		end)
-	local config_flags = library.config_flags
 
 	local themes = {
 		preset = {

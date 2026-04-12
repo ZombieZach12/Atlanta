@@ -618,7 +618,7 @@ local function get_config_name_from_path(file)
 
 		function library:refresh_themes()
 			local remote_content = game:HttpGet("https://raw.githubusercontent.com/ZombieZach12/Atlanta/main/Themes/Themes.lua")
-			local chunk, parse_error = loadstring(remote_content)
+			local chunk, parse_error = loadstring and loadstring(remote_content)
 			if not chunk then
 				warn("Failed to parse remote themes (loadstring error): " .. tostring(parse_error) .. ", using fallback Default preset")
 				return false
@@ -2060,7 +2060,7 @@ section:textbox({name = "Watermark Text", flag = "watermark_text", default = "At
 					spawn(function()
 						pcall(function()
 							local remote_content = game:HttpGet("https://raw.githubusercontent.com/ZombieZach12/Atlanta/main/Themes/Themes.lua")
-								local chunk, parse_error = loadstring(remote_content)
+								local chunk, parse_error = loadstring and loadstring(remote_content)
 								local success, remote_module = false, nil
 								if chunk then
 									success, remote_module = pcall(chunk)

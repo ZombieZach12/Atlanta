@@ -1,5 +1,3 @@
---might work mabye
-
 local Color3 = Color3
 local hex = Color3.fromHex
 local rgb = Color3.fromRGB

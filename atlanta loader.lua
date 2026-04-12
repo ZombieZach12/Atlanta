@@ -104,7 +104,17 @@
 	}
 
 local flags = library.flags
-	flags["Disable Glow"] = false
+				flags["Disable Glow"] = false
+				flags.ThemePreset = "Modern"
+				
+				config_flags.ThemePreset = function(preset)
+				    local preset_colors = themes.presets[preset]
+				    if preset_colors then
+				        for theme_key, color in pairs(preset_colors) do
+				            library:update_theme(theme_key, color)
+				        end
+				    end
+				end
 		
 		-- Global glow flag watcher
 		spawn(function()
@@ -130,6 +140,22 @@ local flags = library.flags
 			["text_outline"] = rgb(0, 0, 0),
 			["glow"] = hex("#b4b4ff"), 
 		},
+
+		presets = {
+			Modern = themes.preset,
+			Legacy = {
+				["outline"] = hex("#0A0A0A"),
+				["inline"] = hex("#2D2D2D"),
+				["accent"] = hex("#6078BE"),
+				["high_contrast"] = hex("#141414"),
+				["low_contrast"] = hex("#1E1E1E"),
+				["text"] = hex("#B4B4B4"),
+				["text_outline"] = rgb(0, 0, 0),
+				["glow"] = hex("#6078BE")
+			}
+		},
+
+		current_preset = "Modern",
 
 		utility = {
 			["outline"] = {
@@ -1811,6 +1837,19 @@ end)
 				:colorpicker({name = "Glow", color = themes.preset.glow, callback = function(color, alpha)
 					library:update_theme("glow", color)
 				end, flag = "Glow"})
+				flags.ThemePreset = "Modern"
+				section:dropdown({
+				    name = "Preset", 
+				    items = {"Modern", "Legacy"}, 
+				    default = "Modern", 
+				    flag = "ThemePreset",
+				    callback = function(preset)
+				        local preset_colors = themes.presets[preset]
+				        for theme_key, color in pairs(preset_colors) do
+				            library:update_theme(theme_key, color)
+				        end
+				    end
+				})
 section:toggle({name = "Disable Glow", flag = "Disable Glow", callback = library.update_glows})
 				section:slider({name = "Blur Size", flag = "Blur Size", min = 0, max = 56, default = 15, interval = 1, callback = function(int)
 					if window.opened then 

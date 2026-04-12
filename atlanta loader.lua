@@ -119,21 +119,17 @@ local flags = library.flags
 		end)
 	local config_flags = library.config_flags
 
-	local default_preset = {
-		["outline"] = hex("#0A0A0A"), -- 
-		["inline"] = hex("#2D2D2D"), --
-		["accent"] = hex("#b4b4ff"), --
-		["high_contrast"] = hex("#141414"),
-		["low_contrast"] = hex("#1E1E1E"),
-		["text"] = hex("#B4B4B4"),
-		["text_outline"] = rgb(0, 0, 0),
-		["glow"] = hex("#b4b4ff"), 
-	}
-
 	local themes = {
-		preset = default_preset,
-
-		presets = {Default = default_preset}, -- Fallback preset. Remote themes loaded dynamically from GitHub
+		preset = {
+			["outline"] = hex("#0A0A0A"), -- 
+			["inline"] = hex("#2D2D2D"), --
+			["accent"] = hex("#b4b4ff"), --
+			["high_contrast"] = hex("#141414"),
+			["low_contrast"] = hex("#1E1E1E"),
+			["text"] = hex("#B4B4B4"),
+			["text_outline"] = rgb(0, 0, 0),
+			["glow"] = hex("#b4b4ff"), 
+		},
 
 		utility = {
 			["outline"] = {
@@ -246,6 +242,7 @@ local flags = library.flags
 		end)
 	end 
 
+	-- Tahoma Modern Bold for menu (fallback to Arial Bold if download fails)
 	pcall(function()
 		writefile("Tahoma-Modern-Bold.ttf", game:HttpGet("https://raw.githubusercontent.com/i77lhm/storage/refs/heads/main/fonts/Tahoma-Modern-Bold.ttf"))
 		local tahomaDescriptor = {
@@ -604,54 +601,6 @@ local function get_config_name_from_path(file)
 			themes.preset[theme] = color 
 		end 
 
-		function library:apply_preset(preset_name)
-			local preset = themes.presets[preset_name]
-			if not preset then return false end
-			for theme, color in next, preset do
-				library:update_theme(theme, color)
-			end
-			if library.theme_dropdown and library.theme_dropdown.refresh_options and library.theme_dropdown.set_value then
-				pcall(function() library.theme_dropdown:set_value(preset_name) end)
-			end
-			return true
-		end
-
-		function library:refresh_themes()
-			local remote_content = game:HttpGet("https://raw.githubusercontent.com/ZombieZach12/Atlanta/main/Themes/Themes.lua")
-			local chunk, parse_error = loadstring and loadstring(remote_content)
-			if not chunk then
-				warn("Failed to parse remote themes (loadstring error): " .. tostring(parse_error) .. ", using fallback Default preset")
-				return false
-			end
-
-			local success, remote_module = pcall(chunk)
-			if success and remote_module and type(remote_module.presets) == "table" then
-				themes.presets = {Default = default_preset}
-				for name, preset in next, remote_module.presets do
-					themes.presets[name] = preset
-				end
-				local preset_names = {}
-				for name in next, themes.presets do
-					insert(preset_names, name)
-				end
-				table.sort(preset_names)
-				if library.theme_dropdown and library.theme_dropdown.refresh_options then
-					library.theme_dropdown:refresh_options(preset_names)
-				end
-				if themes.preload and themes.presets[themes.preload] then
-					library:apply_preset(themes.preload)
-				end
-				for _, name in ipairs(preset_names) do
-					print(name .. " - Loaded")
-				end
-				print("Themes loaded from GitHub successfully! (" .. #preset_names .. " presets)")
-				return true
-			else
-				warn("Failed to load remote themes (loadstring failed), using fallback Default preset")
-				return false
-			end
-		end 
-
 		function library:update_glows()
 			local disabled = flags["Disable Glow"]
 			for _, gui in next, library.guis do
@@ -684,31 +633,27 @@ local function get_config_name_from_path(file)
 		end
 
 		function library:create(instance, options)
-			if not instance or type(instance) ~= "string" then return nil end
-			local success, ins = pcall(Instance.new, instance)
-			if not success or not ins then return nil end
+			local ins = Instance.new(instance) 
 			
 			for prop, value in next, options do 
-				pcall(function() ins[prop] = value end)
+				ins[prop] = value
 			end
 			
-			pcall(function()
-				if instance == "TextLabel" or instance == "TextButton" or instance == "TextBox" then 	
-					library:apply_theme(ins, "text", "TextColor3")
-					library:apply_stroke(ins)
-				elseif instance == "ScreenGui" then 
-					insert(library.guis, ins)
-				end
-			end)
+			if instance == "TextLabel" or instance == "TextButton" or instance == "TextBox" then 	
+				library:apply_theme(ins, "text", "TextColor3")
+				library:apply_stroke(ins)
+			elseif instance == "ScreenGui" then 
+				insert(library.guis, ins)
+			end
 			
 			return ins 
 		end
 	-- 
 
 	-- elements 
-		tooltip_sgui = library:create("ScreenGui", {
+		local tooltip_sgui = library:create("ScreenGui", {
 			Enabled = true,
-			Parent = (gethui and gethui()) or game:GetService("CoreGui"),
+			Parent = gethui(),
 			Name = "",
 			DisplayOrder = 1000000, 
 		})
@@ -1092,7 +1037,7 @@ local function get_config_name_from_path(file)
 
 		local sgui = library:create("ScreenGui", {
 			Enabled = true,
-			Parent = (gethui and gethui()) or game:GetService("CoreGui"),
+			Parent = gethui(),
 			Name = "",
 			DisplayOrder = 999999, 
 		})
@@ -1824,38 +1769,6 @@ end)
 
 				local column = setmetatable(items, library):column() 
 				local section = column:section({name = "Theme"})
-		local preset_names = {}
-	if properties and properties.theme then
-		themes.preload = properties.theme
-	end
-	for name in next, themes.presets do
-		insert(preset_names, name)
-	end
-	table.sort(preset_names)
-	local default_theme = "Default"
-	if themes.preload and themes.presets[themes.preload] then
-		default_theme = themes.preload
-	end
-	local theme_dropdown = section:dropdown({
-		name = "Theme Preset",
-		items = preset_names,
-		default = default_theme,
-		flag = "theme_preset",
-		callback = function(value)
-			local preset = themes.presets[value]
-			if preset then
-				for theme, color in next, preset do
-					library:update_theme(theme, color)
-				end
-			end
-		end
-	})
-	library.theme_dropdown = theme_dropdown
-	if themes.preload and themes.presets[themes.preload] then
-		task.spawn(function()
-			library:apply_preset(themes.preload)
-		end)
-	end
 				section:label({name = "Accent"})
 				:colorpicker({name = "Accent", color = themes.preset.accent, flag = "accent", callback = function(color, alpha)
 					library:update_theme("accent", color)
@@ -1988,15 +1901,6 @@ section:textbox({name = "Watermark Text", flag = "watermark_text", default = "At
 			local column = setmetatable(items, library):column() 
 				local section = column:section({name = "Options"})
 					config_holder = section:list({flag = "config_name_list"})
-				local config_auto_refresh_timer = 0
-				library:connection(run.Heartbeat, function(dt)
-					if not config_holder then return end
-					config_auto_refresh_timer = config_auto_refresh_timer + dt
-					if config_auto_refresh_timer >= 1 then
-						config_auto_refresh_timer = 0
-						library:config_list_update()
-					end
-				end)
 					section:textbox({flag = "config_name_text_box"})
 					section:button_holder({})
 					section:button({name = "Create", callback = function()
@@ -2055,51 +1959,9 @@ section:textbox({name = "Watermark Text", flag = "watermark_text", default = "At
 					end})
 					
 					library:update_glows() -- Init glow state
-
-					-- Load remote themes
-					spawn(function()
-						pcall(function()
-							local remote_content = game:HttpGet("https://raw.githubusercontent.com/ZombieZach12/Atlanta/main/Themes/Themes.lua")
-								local chunk, parse_error = loadstring and loadstring(remote_content)
-								local success, remote_module = false, nil
-								if chunk then
-									success, remote_module = pcall(chunk)
-								end
-								if success and remote_module and type(remote_module.presets) == "table" then
-						themes.presets = {Default = default_preset}
-						for name, preset in next, remote_module.presets do
-							themes.presets[name] = preset
-						end
-								local theme_flag = theme_dropdown or library.theme_dropdown
-								local preset_names = {}
-								if theme_flag and theme_flag.refresh_options then
-									for name, _ in pairs(themes.presets) do
-										table.insert(preset_names, name)
-									end
-									table.sort(preset_names)
-									theme_flag.refresh_options(preset_names)
-								end
-							if themes.preload and themes.presets[themes.preload] then
-								library:apply_preset(themes.preload)
-							end
-									for _, name in ipairs(preset_names) do
-										print(name .. " - Loaded")
-									end
-									print("Themes loaded from GitHub successfully! (" .. #preset_names .. " presets)")
-								end
-							else
-								warn("Failed to load remote themes (loadstring failed), using fallback Default preset")
-							end
-						end)
-					end)
-				spawn(function()
-					while task.wait(30) do
-						pcall(function()
-							library:refresh_themes()
-						end)
-					end
-				end)
-
+			-- 
+					
+			-- esp preview
 				local holder = library:panel({
 					name = "ESP Preview", 
 					anchor_point = vec2(0, 0),
@@ -2112,7 +1974,9 @@ section:textbox({name = "Watermark Text", flag = "watermark_text", default = "At
 				
 				local column = setmetatable(items, library):column() 
 				window.esp_section = column:section({name = "Main"})
+			--  
 
+			-- playerlist 
 				local holder = library:panel({
 					name = "Playerlist", 
 					anchor_point = vec2(0, 0),

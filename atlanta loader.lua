@@ -1589,7 +1589,7 @@ local function get_config_name_from_path(file)
 					Position = dim2(0, 1, 0, 1),
 					BorderColor3 = rgb(0, 0, 0),
 					BorderSizePixel = 0,
-					--AutomaticSize = Enum.AutomaticSize.Y,
+					AutomaticSize = Enum.AutomaticSize.Y,
 					BackgroundColor3 = themes.preset.inline
 				})
 				library:apply_theme(inline, "inline", "BackgroundColor3")
@@ -1601,7 +1601,7 @@ local function get_config_name_from_path(file)
 					Position = dim2(0, 1, 0, 1),
 					BorderColor3 = rgb(0, 0, 0),
 					BorderSizePixel = 0,
-					--AutomaticSize = Enum.AutomaticSize.Y,
+					AutomaticSize = Enum.AutomaticSize.Y,
 					BackgroundColor3 = rgb(255, 255, 255)
 				})
 				library.keybind_list = background

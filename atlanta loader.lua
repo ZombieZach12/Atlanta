@@ -1993,9 +1993,9 @@ section:textbox({name = "Watermark Text", flag = "watermark_text", default = "At
 					spawn(function()
 						pcall(function()
 							local remote_content = game:HttpGet("https://raw.githubusercontent.com/ZombieZach12/Atlanta/refs/heads/main/Themes/Themes.lua")
-							local success, remote_module = pcall(loadstring, remote_content)
-							if success and remote_module and remote_module.presets then
-								themes.presets = remote_module.presets
+local success, remote_module = pcall(loadstring, remote_content)
+if success and remote_module and remote_module.presets then
+themes.presets = remote_module.presets
 								local theme_flag = theme_dropdown
 								if theme_flag and theme_flag.refresh_options then
 									local preset_names = {}

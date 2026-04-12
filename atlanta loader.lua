@@ -131,6 +131,8 @@ local flags = library.flags
 			["glow"] = hex("#b4b4ff"), 
 		},
 
+		presets = {}, -- Loaded dynamically from remote
+
 		utility = {
 			["outline"] = {
 				["BackgroundColor3"] = {}, 	
@@ -242,7 +244,6 @@ local flags = library.flags
 		end)
 	end 
 
-	-- Tahoma Modern Bold for menu (fallback to Arial Bold if download fails)
 	pcall(function()
 		writefile("Tahoma-Modern-Bold.ttf", game:HttpGet("https://raw.githubusercontent.com/i77lhm/storage/refs/heads/main/fonts/Tahoma-Modern-Bold.ttf"))
 		local tahomaDescriptor = {
@@ -1769,6 +1770,20 @@ end)
 
 				local column = setmetatable(items, library):column() 
 				local section = column:section({name = "Theme"})
+		section:dropdown({
+			name = "Theme Preset",
+			items = {},
+			default = "Default",
+			flag = "theme_preset",
+			callback = function(value)
+				local preset = themes.presets[value]
+				if preset then
+					for theme, color in next, preset do
+						library:update_theme(theme, color)
+					end
+				end
+			end
+		})
 				section:label({name = "Accent"})
 				:colorpicker({name = "Accent", color = themes.preset.accent, flag = "accent", callback = function(color, alpha)
 					library:update_theme("accent", color)
@@ -1901,6 +1916,15 @@ section:textbox({name = "Watermark Text", flag = "watermark_text", default = "At
 			local column = setmetatable(items, library):column() 
 				local section = column:section({name = "Options"})
 					config_holder = section:list({flag = "config_name_list"})
+				local config_auto_refresh_timer = 0
+				library:connection(run.Heartbeat, function(dt)
+					if not config_holder then return end
+					config_auto_refresh_timer = config_auto_refresh_timer + dt
+					if config_auto_refresh_timer >= 1 then
+						config_auto_refresh_timer = 0
+						library:config_list_update()
+					end
+				end)
 					section:textbox({flag = "config_name_text_box"})
 					section:button_holder({})
 					section:button({name = "Create", callback = function()
@@ -1959,6 +1983,31 @@ section:textbox({name = "Watermark Text", flag = "watermark_text", default = "At
 					end})
 					
 					library:update_glows() -- Init glow state
+
+					-- Load remote themes
+					spawn(function()
+						pcall(function()
+							local remote_content = game:HttpGet("https://raw.githubusercontent.com/ZombieZach12/Atlanta/refs/heads/main/Themes/Themes.lua")
+							local remote_themes = http_service:JSONDecode(remote_content)
+							if remote_themes and remote_themes.presets then
+								themes.presets = remote_themes.presets
+								local theme_dropdown_flag = "theme_preset"
+								if config_holder and config_holder.refresh_options then
+									local preset_names = {}
+									for name, _ in next, themes.presets do
+										table.insert(preset_names, name)
+									end
+									config_holder.refresh_options(preset_names)
+								end
+								print("Themes loaded from GitHub successfully!")
+							else
+								warn("Failed to load remote themes, using fallback")
+								themes.presets = {
+									Default = themes.preset
+								}
+							end
+						end)
+					end)
 			-- 
 					
 			-- esp preview

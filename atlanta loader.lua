@@ -106,19 +106,39 @@
 local flags = library.flags
 				flags["Disable Glow"] = false
 				
-				local config_flags = library.config_flags
-				
-				config_flags.ThemePreset = function(preset)
-				    flags.ThemePreset = preset
-				    local preset_colors = themes.presets[preset]
-				    if preset_colors then
-				        for theme_key, color in pairs(preset_colors) do
-				            library:update_theme(theme_key, color)
-				        end
-				    end
-				end
+				local config_flags = library.config_flags			
+local function apply_theme_preset(preset)
+    local preset_data = themes.presets[preset]
+    flags.ThemePreset = preset
+    if preset_data then
+        local theme_flags = {
+            accent = "Accent",
+            outline = "Outline",
+            inline = "Inline",
+            glow = "Glow",
+            low_contrast = "low_contrast",
+            high_contrast = "high_contrast",
+            text = "Main",
+            text_outline = "Outline"
+        }
+        for theme_key, data in pairs(preset_data) do
+            local flag_name = theme_flags[string.lower(theme_key)]
+            if flag_name and flags[flag_name] then
+                flags[flag_name] = {Color = data.Color or data, Transparency = data.Transparency or 0}
+            end
+            library:update_theme(theme_key, data.Color or data)
+        end
+        if flags["low_contrast"] and flags["high_contrast"] then
+            library:update_theme("contrast", rgbseq{
+                rgbkey(0, flags["low_contrast"].Color),
+                rgbkey(1, flags["high_contrast"].Color)
+            })
+        end
+    end
+end
+
+config_flags.ThemePreset = apply_theme_preset
 		
-		-- Global glow flag watcher
 		spawn(function()
 			local old_val = flags["Disable Glow"]
 			while true do
@@ -578,7 +598,7 @@ local function get_config_name_from_path(file)
 			return http_service:JSONEncode(Config)
 		end
 
-		function library:load_config(config_json) 
+function library:load_config(config_json) 
 			local config = http_service:JSONDecode(config_json)
 		
 			for _, v in next, config do 
@@ -601,7 +621,12 @@ local function get_config_name_from_path(file)
 					if fn then pcall(function() fn(val) end) end
 				end
 			end
-		end 
+			
+			-- Resync theme preset after config load to fix desync
+			if flags.ThemePreset and type(flags.ThemePreset) == "string" and library.config_flags["ThemePreset"] then
+				library.config_flags["ThemePreset"](flags.ThemePreset)
+			end
+		end
 		
 		function library:round(number, float) 
 			local multiplier = 1 / (float or 1)
@@ -1844,11 +1869,8 @@ end)
 				    items = {"Modern", "Legacy"}, 
 				    default = "Modern", 
 				    flag = "ThemePreset",
-				    callback = function(preset)
-				        local preset_colors = themes.presets[preset]
-				        for theme_key, color in pairs(preset_colors) do
-				            library:update_theme(theme_key, color)
-				        end
+callback = function(preset)
+				        apply_theme_preset(preset)
 				    end
 				})
 section:toggle({name = "Disable Glow", flag = "Disable Glow", callback = library.update_glows})

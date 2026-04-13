@@ -105,6 +105,7 @@
 
 local flags = library.flags
 	flags["Disable Glow"] = false
+	flags["Lock Windows To Screen"] = true
 		
 		-- Global glow flag watcher
 		spawn(function()
@@ -432,22 +433,15 @@ local flags = library.flags
 					local viewport_x = camera.ViewportSize.X
 					local viewport_y = camera.ViewportSize.Y
 
-					local current_position = dim2(
-						0,
-						clamp(
-							start_size.X.Offset + (input.Position.X - start.X),
-							0,
-							viewport_x - frame.Size.X.Offset
-						),
-						0,
-						clamp(
-							start_size.Y.Offset + (input.Position.Y - start.Y),
-							0,
-							viewport_y - frame.Size.Y.Offset
-						)
-					)
+					local x = start_size.X.Offset + (input.Position.X - start.X)
+					local y = start_size.Y.Offset + (input.Position.Y - start.Y)
 
-					frame.Position = current_position
+					if flags["Lock Windows To Screen"] then
+						x = clamp(x, 0, viewport_x - frame.Size.X.Offset)
+						y = clamp(y, 0, viewport_y - frame.Size.Y.Offset)
+					end
+
+					frame.Position = dim2(0, x, 0, y)
 				end
 			end)
 		end

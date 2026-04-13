@@ -1411,20 +1411,12 @@ local function get_config_name_from_path(file)
 						opened = {}
 					end 
 				else
-					-- Skip panels - let them stay open independently
-					for _,gui in library.guis do 
-						local is_panel = false
-						for _,panel_data in ipairs(library.panels) do
-							if gui == panel_data.items.sgui then
-								is_panel = true
-								break
-							end
-						end
-						if gui.Enabled and not is_panel then 
-							gui.Enabled = false
-							table.insert(opened, gui)
-						end
+				for _,gui in library.guis do 
+					if gui.Enabled then 
+						gui.Enabled = false
+						table.insert(opened, gui)
 					end
+				end
 				end
 
 				library:tween(blur, {Size = bool and (flags["Blur Size"] or 15) or 0})
@@ -1675,11 +1667,19 @@ local function get_config_name_from_path(file)
 					local gui_obj = {}
 					local content = options.content or {}
 
-					local sgui = library:create("ScreenGui", {
-						Enabled = true,
-						Parent = gethui(),
+					local sgui = library.guis[1] -- Use shared sgui (keybind/watermark layer)
+					local main_frame = library:create("Frame", {
+						Parent = sgui,
 						Name = title .. " GUI",
-						DisplayOrder = library.display_orders + 1
+						Active = true,
+						BorderColor3 = rgb(0, 0, 0),
+						Size = options.size or dim2(0, 260, 0, 25),
+						Position = options.pos or dim2(0, 50, 0, 200),
+						BorderSizePixel = 0,
+						BackgroundColor3 = themes.preset.outline,
+						AnchorPoint = vec2(0, 0),
+						ClipsDescendants = true,
+						ZIndex = library.display_orders + 1
 					})
 
 					local main_frame = library:create("Frame", {
@@ -1816,7 +1816,6 @@ local function get_config_name_from_path(file)
 
 					gui_obj:pos(options.pos):size(options.width, options.height):draggable(options.draggable ~= false):title(title):content(content)
 
-					insert(library.guis, sgui)
 					library.display_orders = library.display_orders + 1
 
 					setmetatable(gui_obj, {__index = function() return function() return gui_obj end end})

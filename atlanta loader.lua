@@ -104,41 +104,9 @@
 	}
 
 local flags = library.flags
-				flags["Disable Glow"] = false
-				
-				local config_flags = library.config_flags			
-local function apply_theme_preset(preset)
-    local preset_data = themes.presets[preset]
-    flags.ThemePreset = preset
-    if preset_data then
-        local theme_flags = {
-            accent = "Accent",
-            outline = "Outline",
-            inline = "Inline",
-            glow = "Glow",
-            low_contrast = "low_contrast",
-            high_contrast = "high_contrast",
-            text = "Main",
-            text_outline = "Outline"
-        }
-        for theme_key, data in pairs(preset_data) do
-            local flag_name = theme_flags[string.lower(theme_key)]
-            if flag_name and flags[flag_name] then
-                flags[flag_name] = {Color = data.Color or data, Transparency = data.Transparency or 0}
-            end
-            library:update_theme(theme_key, data.Color or data)
-        end
-        if flags["low_contrast"] and flags["high_contrast"] then
-            library:update_theme("contrast", rgbseq{
-                rgbkey(0, flags["low_contrast"].Color),
-                rgbkey(1, flags["high_contrast"].Color)
-            })
-        end
-    end
-end
-
-config_flags.ThemePreset = apply_theme_preset
+	flags["Disable Glow"] = false
 		
+		-- Global glow flag watcher
 		spawn(function()
 			local old_val = flags["Disable Glow"]
 			while true do
@@ -149,36 +117,19 @@ config_flags.ThemePreset = apply_theme_preset
 				end
 			end
 		end)
-
-	local default_preset = {
-		["outline"] = hex("#0A0A0A"), -- 
-		["inline"] = hex("#2D2D2D"), --
-		["accent"] = hex("#b4b4ff"), --
-		["high_contrast"] = hex("#141414"),
-		["low_contrast"] = hex("#1E1E1E"),
-		["text"] = hex("#B4B4B4"),
-		["text_outline"] = rgb(0, 0, 0),
-		["glow"] = hex("#b4b4ff"), 
-	}
+	local config_flags = library.config_flags
 
 	local themes = {
-		preset = default_preset,
-
-		presets = {
-			Modern = default_preset,
-			Legacy = {
-				["outline"] = hex("#0A0A0A"),
-				["inline"] = hex("#2D2D2D"),
-				["accent"] = hex("#6078BE"),
-				["high_contrast"] = hex("#141414"),
-				["low_contrast"] = hex("#1E1E1E"),
-				["text"] = hex("#B4B4B4"),
-				["text_outline"] = rgb(0, 0, 0),
-				["glow"] = hex("#6078BE")
-			}
+		preset = {
+			["outline"] = hex("#0A0A0A"), -- 
+			["inline"] = hex("#2D2D2D"), --
+			["accent"] = hex("#b4b4ff"), --
+			["high_contrast"] = hex("#141414"),
+			["low_contrast"] = hex("#1E1E1E"),
+			["text"] = hex("#B4B4B4"),
+			["text_outline"] = rgb(0, 0, 0),
+			["glow"] = hex("#b4b4ff"), 
 		},
-
-		current_preset = "Modern",
 
 		utility = {
 			["outline"] = {
@@ -600,7 +551,7 @@ local function get_config_name_from_path(file)
 			return http_service:JSONEncode(Config)
 		end
 
-function library:load_config(config_json) 
+		function library:load_config(config_json) 
 			local config = http_service:JSONDecode(config_json)
 		
 			for _, v in next, config do 
@@ -623,12 +574,7 @@ function library:load_config(config_json)
 					if fn then pcall(function() fn(val) end) end
 				end
 			end
-			
-			-- Resync theme preset after config load to fix desync
-			if flags.ThemePreset and type(flags.ThemePreset) == "string" and library.config_flags["ThemePreset"] then
-				library.config_flags["ThemePreset"](flags.ThemePreset)
-			end
-		end
+		end 
 		
 		function library:round(number, float) 
 			local multiplier = 1 / (float or 1)
@@ -1865,16 +1811,6 @@ end)
 				:colorpicker({name = "Glow", color = themes.preset.glow, callback = function(color, alpha)
 					library:update_theme("glow", color)
 				end, flag = "Glow"})
-				flags.ThemePreset = "Modern"
-				section:dropdown({
-				    name = "Preset", 
-				    items = {"Modern", "Legacy"}, 
-				    default = "Modern", 
-				    flag = "ThemePreset",
-callback = function(preset)
-				        apply_theme_preset(preset)
-				    end
-				})
 section:toggle({name = "Disable Glow", flag = "Disable Glow", callback = library.update_glows})
 				section:slider({name = "Blur Size", flag = "Blur Size", min = 0, max = 56, default = 15, interval = 1, callback = function(int)
 					if window.opened then 

@@ -1411,8 +1411,16 @@ local function get_config_name_from_path(file)
 						opened = {}
 					end 
 				else
+					-- Skip panels - let them stay open independently
 					for _,gui in library.guis do 
-						if gui.Enabled then 
+						local is_panel = false
+						for _,panel_data in ipairs(library.panels) do
+							if gui == panel_data.items.sgui then
+								is_panel = true
+								break
+							end
+						end
+						if gui.Enabled and not is_panel then 
 							gui.Enabled = false
 							table.insert(opened, gui)
 						end
@@ -1423,9 +1431,9 @@ local function get_config_name_from_path(file)
 
 				dock_outline.Visible = bool;
 
-				sgui.Enabled = true
-				notif_holder.Enabled = true
-				tooltip_sgui.Enabled = true
+				sgui.Enabled = bool
+				notif_holder.Enabled = bool
+				tooltip_sgui.Enabled = bool
 				library.cache.Enabled = false
 
 				for _,tooltip in tooltip_sgui:GetChildren() do 

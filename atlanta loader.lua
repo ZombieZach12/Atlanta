@@ -150,9 +150,7 @@ config_flags.ThemePreset = apply_theme_preset
 			end
 		end)
 
-	local themes = {}
-
-	themes.preset = {
+	local default_preset = {
 		["outline"] = hex("#0A0A0A"), -- 
 		["inline"] = hex("#2D2D2D"), --
 		["accent"] = hex("#b4b4ff"), --
@@ -163,65 +161,69 @@ config_flags.ThemePreset = apply_theme_preset
 		["glow"] = hex("#b4b4ff"), 
 	}
 
-	themes.presets = {
-		Modern = themes.preset,
-		Legacy = {
-			["outline"] = hex("#0A0A0A"),
-			["inline"] = hex("#2D2D2D"),
-			["accent"] = hex("#6078BE"),
-			["high_contrast"] = hex("#141414"),
-			["low_contrast"] = hex("#1E1E1E"),
-			["text"] = hex("#B4B4B4"),
-			["text_outline"] = rgb(0, 0, 0),
-			["glow"] = hex("#6078BE")
-		}
-	}
+	local themes = {
+		preset = default_preset,
 
-	themes.current_preset = "Modern"
+		presets = {
+			Modern = default_preset,
+			Legacy = {
+				["outline"] = hex("#0A0A0A"),
+				["inline"] = hex("#2D2D2D"),
+				["accent"] = hex("#6078BE"),
+				["high_contrast"] = hex("#141414"),
+				["low_contrast"] = hex("#1E1E1E"),
+				["text"] = hex("#B4B4B4"),
+				["text_outline"] = rgb(0, 0, 0),
+				["glow"] = hex("#6078BE")
+			}
+		},
 
-	themes.utility = {
-		["outline"] = {
-			["BackgroundColor3"] = {}, 	
-			["Color"] = {}, 
-		},
-		["inline"] = {
-			["BackgroundColor3"] = {}, 	
-			["ImageColor3"] = {},
-		},
-		["accent"] = {
-			["BackgroundColor3"] = {}, 	
-			["TextColor3"] = {}, 
-			["ImageColor3"] = {}, 
-			["ScrollBarImageColor3"] = {} 
-		},
-		["contrast"] = {
-			["Color"] = {}, 	
-		},
-		["text"] = {
-			["TextColor3"] = {}, 	
-		},
-		["text_outline"] = {
-			["Color"] = {}, 	
-		},
-		["glow"] = {
-			["ImageColor3"] = {}, 	
+		current_preset = "Modern",
+
+		utility = {
+			["outline"] = {
+				["BackgroundColor3"] = {}, 	
+				["Color"] = {}, 
+			},
+			["inline"] = {
+				["BackgroundColor3"] = {}, 	
+				["ImageColor3"] = {},
+			},
+			["accent"] = {
+				["BackgroundColor3"] = {}, 	
+				["TextColor3"] = {}, 
+				["ImageColor3"] = {}, 
+				["ScrollBarImageColor3"] = {} 
+			},
+			["contrast"] = {
+				["Color"] = {}, 	
+			},
+			["text"] = {
+				["TextColor3"] = {}, 	
+			},
+			["text_outline"] = {
+				["Color"] = {}, 	
+			},
+			["glow"] = {
+				["ImageColor3"] = {}, 	
+			}, 
+			["high_contrast"] = {
+				["BackgroundColor3"] = {},
+			},
+			["low_contrast"] = {
+				["BackgroundColor3"] = {},
+			}
 		}, 
-		["high_contrast"] = {
-			["BackgroundColor3"] = {},
-		},
-		["low_contrast"] = {
-			["BackgroundColor3"] = {},
-		}
-	}
 
-	themes.find = {
-		["Frame"] = "BackgroundColor3", 
-		["TextLabel"] = "TextColor3", 
-		["UIGradient"] = "Color",
-		["UIStroke"] = "Color",
-		["ImageLabel"] = "ImageColor3",
-		["TextButton"] = "BackgroundColor3", 
-		["ScrollingFrame"] = "ScrollBarImageColor3"
+		find = {
+			["Frame"] = "BackgroundColor3", 
+			["TextLabel"] = "TextColor3", 
+			["UIGradient"] = "Color",
+			["UIStroke"] = "Color",
+			["ImageLabel"] = "ImageColor3",
+			["TextButton"] = "BackgroundColor3", 
+			["ScrollingFrame"] = "ScrollBarImageColor3"
+		}
 	}
 
 	local keys = {

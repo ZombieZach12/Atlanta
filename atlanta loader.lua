@@ -1411,21 +1411,21 @@ local function get_config_name_from_path(file)
 						opened = {}
 					end 
 				else
-				for _,gui in library.guis do 
-					if gui.Enabled then 
-						gui.Enabled = false
-						table.insert(opened, gui)
+					for _,gui in library.guis do 
+						if gui.Enabled then 
+							gui.Enabled = false
+							table.insert(opened, gui)
+						end
 					end
-				end
 				end
 
 				library:tween(blur, {Size = bool and (flags["Blur Size"] or 15) or 0})
 
 				dock_outline.Visible = bool;
 
-				sgui.Enabled = bool
-				notif_holder.Enabled = bool
-				tooltip_sgui.Enabled = bool
+				sgui.Enabled = true
+				notif_holder.Enabled = true
+				tooltip_sgui.Enabled = true
 				library.cache.Enabled = false
 
 				for _,tooltip in tooltip_sgui:GetChildren() do 
@@ -1660,168 +1660,6 @@ local function get_config_name_from_path(file)
 					BackgroundColor3 = rgb(255, 255, 255)
 				})
 				library.keybind_list = background
-
-				-- Screen GUI API
-				function library:screen_gui(title, options)
-					options = options or {}
-					local gui_obj = {}
-					local content = options.content or {}
-
-					local sgui = library.guis[1] -- Use shared sgui (keybind/watermark layer)
-					local main_frame = library:create("Frame", {
-						Parent = sgui,
-						Name = title .. " GUI",
-						Active = true,
-						BorderColor3 = rgb(0, 0, 0),
-						Size = options.size or dim2(0, 260, 0, 25),
-						Position = options.pos or dim2(0, 50, 0, 200),
-						BorderSizePixel = 0,
-						BackgroundColor3 = themes.preset.outline,
-						AnchorPoint = vec2(0, 0),
-						ClipsDescendants = true,
-						ZIndex = library.display_orders + 1
-					})
-
-					local main_frame = library:create("Frame", {
-						Parent = sgui,
-						Name = title,
-						Active = true,
-						BorderColor3 = rgb(0, 0, 0),
-						Size = options.size or dim2(0, 260, 0, 25),
-						Position = options.pos or dim2(0, 50, 0, 200),
-						BorderSizePixel = 0,
-						BackgroundColor3 = themes.preset.outline,
-						AnchorPoint = vec2(0, 0),
-						ClipsDescendants = true
-					})
-
-					-- Full styling matching keybind list
-					local outline = main_frame
-					local inline_frame = library:create("Frame", {
-						Parent = outline,
-						Name = "inline",
-						Position = dim2(0, 1, 0, 1),
-						BorderColor3 = rgb(0, 0, 0),
-						Size = dim2(1, -2, 1, -2),
-						BorderSizePixel = 0,
-						BackgroundColor3 = themes.preset.inline
-					}); library:apply_theme(inline_frame, "inline", "BackgroundColor3")
-
-					local bg_frame = library:create("Frame", {
-						Parent = inline_frame,
-						Name = "bg",
-						Position = dim2(0, 1, 0, 1),
-						BorderColor3 = rgb(0, 0, 0),
-						Size = dim2(1, -2, 1, -2),
-						BorderSizePixel = 0,
-						BackgroundColor3 = rgb(255, 255, 255)
-					})
-
-					local gradient = library:create("UIGradient", {
-						Parent = bg_frame,
-						Rotation = 90,
-						Color = rgbseq{
-							rgbkey(0, themes.preset.high_contrast),
-							rgbkey(1, themes.preset.low_contrast)
-						}
-					}); library:apply_theme(gradient, "contrast", "Color")
-
-					-- Title
-					local title_label = library:create("TextLabel", {
-						Parent = bg_frame,
-						Name = "title",
-						FontFace = library.font,
-						TextColor3 = themes.preset.text,
-						Text = title or "GUI",
-						Size = dim2(1, 0, 0, 20),
-						BackgroundTransparency = 1,
-						Position = dim2(0, 5, 0, 2),
-						TextXAlignment = Enum.TextXAlignment.Left,
-						TextSize = 12,
-						BorderSizePixel = 0,
-						TextTruncate = Enum.TextTruncate.AtEnd
-					}); library:apply_theme(title_label, "text", "TextColor3")
-
-					local content_frame = library:create("Frame", {
-						Parent = bg_frame,
-						Name = "content",
-						Position = dim2(0, 5, 0, 22),
-						Size = dim2(1, -10, 1, -27),
-						BackgroundTransparency = 1
-					})
-
-					local list_layout = library:create("UIListLayout", {
-						Parent = content_frame,
-						Padding = dim(0, 2),
-						SortOrder = Enum.SortOrder.LayoutOrder
-					})
-
-					local padding = library:create("UIPadding", {
-						Parent = content_frame,
-						PaddingTop = dim(0, 2),
-						PaddingBottom = dim(0, 2),
-						PaddingLeft = dim(0, 2),
-						PaddingRight = dim(0, 2)
-					})
-
-					library:make_resizable(main_frame)
-
-					function gui_obj:draggable(enabled)
-						if enabled == nil then enabled = true end
-						if enabled then
-							library:draggify(main_frame)
-						else
-							-- Remove draggify connections if needed (simplified)
-							print("Draggable disabled")
-						end
-						return self
-					end
-
-					function gui_obj:pos(position)
-						main_frame.Position = position or dim2(0, 50, 0, 200)
-						return self
-					end
-
-					function gui_obj:size(w, h)
-						main_frame.Size = dim2(0, w or 260, 0, h or 25)
-						return self
-					end
-
-					function gui_obj:title(new_title)
-						title_label.Text = new_title or title
-						return self
-					end
-
-					function gui_obj:content(items)
-						content_frame:ClearAllChildren()
-						list_layout.Parent = content_frame
-						padding.Parent = content_frame
-						for _, item in ipairs(items or content) do
-							if type(item) == "string" then
-								local lbl = library:create("TextLabel", {
-									Parent = content_frame,
-									Text = item,
-									FontFace = library.font,
-									TextColor3 = themes.preset.text,
-									BackgroundTransparency = 1,
-									TextSize = 12,
-									TextXAlignment = Enum.TextXAlignment.Left
-								})
-							else
-								item.Parent = content_frame
-							end
-						end
-						return self
-					end
-
-					gui_obj:pos(options.pos):size(options.width, options.height):draggable(options.draggable ~= false):title(title):content(content)
-
-					library.display_orders = library.display_orders + 1
-
-					setmetatable(gui_obj, {__index = function() return function() return gui_obj end end})
-
-					return gui_obj
-				end
 				
 				local UIGradient = library:create("UIGradient", {
 					Parent = background,
@@ -2028,7 +1866,7 @@ end)
 				:colorpicker({name = "Glow", color = themes.preset.glow, callback = function(color, alpha)
 					library:update_theme("glow", color)
 				end, flag = "Glow"})
-				section:toggle({name = "Disable Glow", flag = "Disable Glow", callback = library.update_glows})
+section:toggle({name = "Disable Glow", flag = "Disable Glow", callback = library.update_glows})
 				section:slider({name = "Blur Size", flag = "Blur Size", min = 0, max = 56, default = 15, interval = 1, callback = function(int)
 					if window.opened then 
 						blur.Size = int
@@ -2067,10 +1905,10 @@ end)
 					library:update_window_mode()
 				end})
 				section:toggle({name = "Lock Windows To Screen", flag = "Lock Windows To Screen"})
-				section:toggle({name = "Watermark", flag = "watermark", callback = function(bool)
+section:toggle({name = "Watermark", flag = "watermark", callback = function(bool)
 					watermark.set_visible(bool)
 				end})
-				section:textbox({name = "Watermark Text", flag = "watermark_text", default = "Atlanta", callback = function(text)
+section:textbox({name = "Watermark Text", flag = "watermark_text", default = "Atlanta", callback = function(text)
 					base_watermark_text = text
 				end})
 				section:toggle({name = "Show FPS", flag = "watermark_fps", default = true})

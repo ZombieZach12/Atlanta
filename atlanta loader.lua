@@ -104,9 +104,10 @@
 	}
 
 local flags = library.flags
-	flags["Disable Glow"] = false
+				flags["Disable Glow"] = false
+				
+config_flags.ThemePreset = function(preset) apply_theme_preset(preset) end
 		
-		-- Global glow flag watcher
 		spawn(function()
 			local old_val = flags["Disable Glow"]
 			while true do
@@ -117,19 +118,36 @@ local flags = library.flags
 				end
 			end
 		end)
-	local config_flags = library.config_flags
+
+	local default_preset = {
+		["outline"] = hex("#0A0A0A"), -- 
+		["inline"] = hex("#2D2D2D"), --
+		["accent"] = hex("#b4b4ff"), --
+		["high_contrast"] = hex("#141414"),
+		["low_contrast"] = hex("#1E1E1E"),
+		["text"] = hex("#B4B4B4"),
+		["text_outline"] = rgb(0, 0, 0),
+		["glow"] = hex("#b4b4ff"), 
+	}
 
 	local themes = {
-		preset = {
-			["outline"] = hex("#0A0A0A"), -- 
-			["inline"] = hex("#2D2D2D"), --
-			["accent"] = hex("#b4b4ff"), --
-			["high_contrast"] = hex("#141414"),
-			["low_contrast"] = hex("#1E1E1E"),
-			["text"] = hex("#B4B4B4"),
-			["text_outline"] = rgb(0, 0, 0),
-			["glow"] = hex("#b4b4ff"), 
+		preset = default_preset,
+
+		presets = {
+			Modern = default_preset,
+			Legacy = {
+				["outline"] = hex("#0A0A0A"),
+				["inline"] = hex("#2D2D2D"),
+				["accent"] = hex("#6078BE"),
+				["high_contrast"] = hex("#141414"),
+				["low_contrast"] = hex("#1E1E1E"),
+				["text"] = hex("#B4B4B4"),
+				["text_outline"] = rgb(0, 0, 0),
+				["glow"] = hex("#6078BE")
+			}
 		},
+
+		current_preset = "Modern",
 
 		utility = {
 			["outline"] = {
@@ -551,7 +569,7 @@ local function get_config_name_from_path(file)
 			return http_service:JSONEncode(Config)
 		end
 
-		function library:load_config(config_json) 
+function library:load_config(config_json) 
 			local config = http_service:JSONDecode(config_json)
 		
 			for _, v in next, config do 
@@ -574,7 +592,12 @@ local function get_config_name_from_path(file)
 					if fn then pcall(function() fn(val) end) end
 				end
 			end
-		end 
+			
+			-- Resync theme preset after config load to fix desync
+			if flags.ThemePreset and type(flags.ThemePreset) == "string" and library.config_flags["ThemePreset"] then
+				library.config_flags["ThemePreset"](flags.ThemePreset)
+			end
+		end
 		
 		function library:round(number, float) 
 			local multiplier = 1 / (float or 1)
@@ -1811,6 +1834,16 @@ end)
 				:colorpicker({name = "Glow", color = themes.preset.glow, callback = function(color, alpha)
 					library:update_theme("glow", color)
 				end, flag = "Glow"})
+				flags.ThemePreset = "Modern"
+				section:dropdown({
+				    name = "Preset", 
+				    items = {"Modern", "Legacy"}, 
+				    default = "Modern", 
+				    flag = "ThemePreset",
+callback = function(preset)
+				        apply_theme_preset(preset)
+				    end
+				})
 section:toggle({name = "Disable Glow", flag = "Disable Glow", callback = library.update_glows})
 				section:slider({name = "Blur Size", flag = "Blur Size", min = 0, max = 56, default = 15, interval = 1, callback = function(int)
 					if window.opened then 

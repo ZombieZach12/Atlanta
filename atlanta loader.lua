@@ -650,7 +650,6 @@ local function get_config_name_from_path(file)
 				end
 			end
 			
-			library:notification({text = "Window mode: " .. mode, time = 2})
 		end
 
 		function library:connection(signal, callback)

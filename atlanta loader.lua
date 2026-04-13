@@ -68,7 +68,7 @@
 -- 
 
 -- library init
-	local library = {
+local library = {
 		directory = "Beyond.hook PL",
 		folders = {
 			"/fonts",
@@ -89,6 +89,8 @@
 		current_tab, 
 		current_element_open, 
 		dock_button_holder,  
+		panels = {},
+		active_panel_index = 1,
 		old_config; 
 		font, 
 		keybind_list,
@@ -106,6 +108,8 @@
 local flags = library.flags
 	flags["Disable Glow"] = false
 	flags["Lock Windows To Screen"] = true
+	flags["window_mode"] = "All at once"
+		library.active_panel = nil
 		
 		-- Global glow flag watcher
 		spawn(function()
@@ -115,6 +119,18 @@ local flags = library.flags
 				if flags["Disable Glow"] ~= old_val then
 					old_val = flags["Disable Glow"]
 					library:update_glows()
+				end
+			end
+		end)
+		
+		-- Window mode flag watcher
+		spawn(function()
+			local old_mode = flags["window_mode"]
+			while true do
+				task.wait()
+				if flags["window_mode"] ~= old_mode then
+					old_mode = flags["window_mode"]
+					library:update_window_mode()
 				end
 			end
 		end)
@@ -608,6 +624,32 @@ local function get_config_name_from_path(file)
 			end
 		end
 
+		function library:update_window_mode()
+			local mode = flags["window_mode"]
+			local vp_size = camera.ViewportSize
+			
+			for i, panel_data in ipairs(library.panels) do
+				local items = panel_data.items
+				local is_active = (mode == "Tabs" and i == library.active_panel_index)
+				
+				items.sgui.Enabled = (mode == "All at once") or is_active
+				
+				if mode == "Tabs" and is_active then
+					-- Center active panel
+					local x = (vp_size.X / 2) - (items.main_holder.AbsoluteSize.X / 2)
+					local y = (vp_size.Y / 2) - (items.main_holder.AbsoluteSize.Y / 2)
+					items.main_holder.Position = UDim2.new(0, x, 0, y)
+					
+					-- Highlight active tab button
+					items.Icon.ImageColor3 = themes.preset.accent
+				else
+					items.Icon.ImageColor3 = themes.preset.inline
+				end
+			end
+			
+			library:notification({text = "Window mode updated to: " .. mode, time = 2})
+		end
+
 		function library:connection(signal, callback)
 			local connection = signal:Connect(callback)
 			
@@ -1022,8 +1064,24 @@ local function get_config_name_from_path(file)
 				items.Icon.ImageColor3 = items.sgui.Enabled and themes.preset.accent or themes.preset.inline
 			end)
 
+			-- Track panel for window mode
+			insert(library.panels, {
+				name = cfg.name,
+				items = items,
+				button = items.button,
+				sgui = items.sgui,
+				main_holder = items.main_holder
+			})
+
+			-- Override button click for tabs mode
+			local original_click = items.button.MouseButton1Click
 			items.button.MouseButton1Click:Connect(function()
-				items.sgui.Enabled = not items.sgui.Enabled
+				if flags["window_mode"] == "Tabs" then
+					library.active_panel_index = find(library.panels, cfg) or 1
+					library:update_window_mode()
+				else
+					original_click:Fire()
+				end
 			end)
 			
 			return setmetatable(cfg, library)

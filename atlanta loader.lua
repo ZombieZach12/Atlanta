@@ -1892,13 +1892,17 @@ section:toggle({name = "Disable Glow", flag = "Disable Glow", callback = library
 						library.keybind_list_frame.Position = dim2(0, x, 0, math.clamp(y, 0, math.max(0, vp.Y - library.keybind_list_frame.Size.Y.Offset)))
 					end
 				end})
-section:slider({name = "Keybind List Y", flag = "keybind_list_y", min = 0, max = 2000, default = 200, interval = 1, callback = function(v)
+				section:slider({name = "Keybind List Y", flag = "keybind_list_y", min = 0, max = 2000, default = 200, interval = 1, callback = function(v)
 					if library.keybind_list_frame then
 						local vp = camera.ViewportSize
 						local x = flags["keybind_list_x"] or 50
 						local y = math.clamp(v, 0, math.max(0, vp.Y - library.keybind_list_frame.Size.Y.Offset))
 						library.keybind_list_frame.Position = dim2(0, math.clamp(x, 0, math.max(0, vp.X - library.keybind_list_frame.Size.X.Offset)), 0, y)
 					end
+				end})
+				section:toggle({name = "Tabs Mode", flag = "window_mode_toggle", callback = function(bool)
+					flags["window_mode"] = bool and "Tabs" or "All at once"
+					library:update_window_mode()
 				end})
 				section:toggle({name = "Lock Windows To Screen", flag = "Lock Windows To Screen"})
 section:toggle({name = "Watermark", flag = "watermark", callback = function(bool)

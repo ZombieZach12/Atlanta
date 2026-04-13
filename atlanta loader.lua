@@ -634,20 +634,23 @@ local function get_config_name_from_path(file)
 				
 				items.sgui.Enabled = (mode == "All at once") or is_active
 				
-				if mode == "Tabs" and is_active then
-					-- Center active panel
-					local x = (vp_size.X / 2) - (items.main_holder.AbsoluteSize.X / 2)
-					local y = (vp_size.Y / 2) - (items.main_holder.AbsoluteSize.Y / 2)
-					items.main_holder.Position = UDim2.new(0, x, 0, y)
-					
-					-- Highlight active tab button
-					items.Icon.ImageColor3 = themes.preset.accent
+				if mode == "Tabs" then
+					if is_active then
+						-- Center active panel
+						local x = math.clamp((vp_size.X / 2) - (items.main_holder.AbsoluteSize.X / 2), 0, vp_size.X - items.main_holder.AbsoluteSize.X)
+						local y = math.clamp((vp_size.Y / 2) - (items.main_holder.AbsoluteSize.Y / 2), 0, vp_size.Y - items.main_holder.AbsoluteSize.Y)
+						items.main_holder.Position = UDim2.new(0, x, 0, y)
+						items.Icon.ImageColor3 = themes.preset.accent
+					else
+						items.Icon.ImageColor3 = themes.preset.inline
+					end
 				else
-					items.Icon.ImageColor3 = themes.preset.inline
+					-- All at once: icon follows Enabled state
+					items.Icon.ImageColor3 = items.sgui.Enabled and themes.preset.accent or themes.preset.inline
 				end
 			end
 			
-			library:notification({text = "Window mode updated to: " .. mode, time = 2})
+			library:notification({text = "Window mode: " .. mode, time = 2})
 		end
 
 		function library:connection(signal, callback)
@@ -1073,14 +1076,14 @@ local function get_config_name_from_path(file)
 				main_holder = items.main_holder
 			})
 
-			-- Override button click for tabs mode
-			local original_click = items.button.MouseButton1Click
+			-- Override button click for tabs mode (FULLY FUNCTIONAL)
+			local panel_index = #library.panels
 			items.button.MouseButton1Click:Connect(function()
 				if flags["window_mode"] == "Tabs" then
-					library.active_panel_index = find(library.panels, cfg) or 1
+					library.active_panel_index = panel_index
 					library:update_window_mode()
 				else
-					original_click:Fire()
+					items.sgui.Enabled = not items.sgui.Enabled
 				end
 			end)
 			

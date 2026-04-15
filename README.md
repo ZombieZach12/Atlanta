@@ -11,6 +11,7 @@ A UI library for Roblox scripts.
 * Option to disable glow
 * Fixed the tooltip rendering below buttons
 * Settings to config the watermark
+* Tabs mode 
 
 ---
 

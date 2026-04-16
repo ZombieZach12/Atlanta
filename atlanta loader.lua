@@ -97,7 +97,7 @@ local library = {
 		binds = {}, 
 		
 		copied_flag; 
-		copied_rainbow;
+		is_rainbow;
 
 		instances = {}; 
 		drawings = {};
@@ -4118,10 +4118,11 @@ end
 				section:button_holder({})
 				section:button({name = "Copy", callback = function()
 					library.copied_flag = flags[cfg.flag]
-					library.copied_rainbow = flags[cfg.flag .. "_RAINBOW_FLAG"]
+					library.is_rainbow = cfg.flag .. "_RAINBOW_FLAG"
 				end})
 				section:button({name = "Paste", callback = function()
-				RainbowToggle.set(library.copied_rainbow)
+					RainbowToggle.set(library.is_rainbow)
+					cfg.set(library.copied_flag.Color, library.copied_flag.Transparency)
 				end})
 
 				local main_holder_inline = library:create("Frame", {
